@@ -16,13 +16,34 @@ namespace KubeCtrlUI.Views
             log = App.CreateLogger<MainWindow>();
             InitializeComponent();
         }
-
-        private void ListBox_DoubleTapped(object? sender, TappedEventArgs e)
+        
+        private void TabControl_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (sender is TabControl tabControl)
+            {
+                TabItem selectedTab = tabControl.SelectedItem as TabItem;
+                switch (selectedTab.Name)
+                {
+                    case "NamespacesTab":
+                        log.LogInformation("Selected tab changed to: {Tab}", selectedTab);
+                        if (DataContext is MainWindowViewModel viewModel)
+                            viewModel.RefreshNamespaces();
+                        break;    
+                }
+            }
+        }
+        
+        private void Contexts_DoubleTapped(object? sender, TappedEventArgs e)
         {
             if (sender is ListBox listBox)
                 if (listBox.SelectedItem is KubeContext context)
                     if (DataContext is MainWindowViewModel viewModel)
                         viewModel.SwitchContext(context);
+        }
+
+        private void NamespaceListBox_DoubleTapped(object? sender, TappedEventArgs e)
+        {
+            
         }
     }
 }

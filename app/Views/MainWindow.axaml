@@ -17,12 +17,12 @@
         <vm:MainWindowViewModel/>
     </Design.DataContext>
 
-	<TabControl>
-		<TabItem Header="Contexts">
+	<TabControl SelectionChanged="TabControl_SelectionChanged">
+		<TabItem Header="Contexts" Name="ContextsTab">
 			<StackPanel Margin="20" Spacing="10">
 				<TextBlock Text="{Binding Status}" FontWeight="Bold"/>
 				<ListBox ItemsSource="{Binding Contexts}"
-					DoubleTapped="ListBox_DoubleTapped"
+					DoubleTapped="Contexts_DoubleTapped"
 					SelectionMode="Single"
 					>
 					<ListBox.ItemTemplate>
@@ -34,6 +34,25 @@
 								<TextBlock Grid.Column="1" Text="{Binding Name}" FontWeight="Bold" Margin="5,0"/>
 								<TextBlock Grid.Column="2" Text="{Binding Cluster}" Foreground="Gray"/>
 								<TextBlock Grid.Column="3" Text="{Binding Namespace}" Margin="20,0,0,0" Foreground="DarkGray"/>
+							</Grid>
+						</DataTemplate>
+					</ListBox.ItemTemplate>
+				</ListBox>								
+			</StackPanel>
+		</TabItem>
+		<TabItem Header="Namespaces" Name="NamespacesTab">
+			<StackPanel Margin="20" Spacing="10">
+				<ListBox ItemsSource="{Binding Namespaces}"
+					DoubleTapped="NamespaceListBox_DoubleTapped"
+					SelectionMode="Single"
+					>
+					<ListBox.ItemTemplate>
+						<DataTemplate>
+							<Grid ColumnDefinitions="Auto,*">
+								<TextBlock Text="*" Foreground="Green" FontWeight="Bold"
+								           IsVisible="{Binding IsCurrent}"
+								           />
+								<TextBlock Grid.Column="1" Text="{Binding Name}" FontWeight="Bold" Margin="5,0"/>
 							</Grid>
 						</DataTemplate>
 					</ListBox.ItemTemplate>

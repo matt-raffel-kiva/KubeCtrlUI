@@ -2,10 +2,14 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
+using DynamicData.Binding;
 using KubeCtrlUI.Models;
 using k8s;
 using k8s.KubeConfigModels;
+using k8s.Models;
 using Microsoft.Extensions.Logging;
 
 namespace KubeCtrlUI.ViewModels
@@ -18,6 +22,14 @@ namespace KubeCtrlUI.ViewModels
         protected virtual void OnPropertyChanged([CallerMemberName] string? propertyName = null)
             => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         
+        private string status = "Loading contexts...";
+        public string Status
+        {
+            get => status;
+            set { status = value; OnPropertyChanged(); }
+        }
+        
+        #region Context Data (tab 1)
         private readonly K8SConfiguration kubeConfig;
         public ObservableCollection<KubeContext> Contexts { get; set; } = new();
         
@@ -35,15 +47,14 @@ namespace KubeCtrlUI.ViewModels
                     // SwitchContextCommand.Execute(value);
                 }
             }
-        }        
+        }    
+        #endregion
         
-        private string status = "Loading contexts...";
-        public string Status
-        {
-            get => status;
-            set { status = value; OnPropertyChanged(); }
-        }
+        #region namespace data (tab 2)
+        public ObservableCollection<KubeNamespace> Namespaces { get; set; } = new();
+        #endregion
         
+        #region View interactions/commands
         public void SwitchContext(KubeContext context)
         {
             if (context == null || context.Name == kubeConfig.CurrentContext)
@@ -63,6 +74,18 @@ namespace KubeCtrlUI.ViewModels
             }
         }
         
+        public void RefreshNamespaces()
+        {
+            try
+            {
+                LoadNamespaces();
+            }
+            catch (Exception ex)
+            {
+                Status = $"Failed to load namespaces: {ex.Message}";
+            }
+        }
+        #endregion
 
         public MainWindowViewModel()
         {
@@ -106,6 +129,41 @@ namespace KubeCtrlUI.ViewModels
             }
 
             Status = $"Loaded {Contexts.Count} context(s). Current: {kubeConfig.CurrentContext}";
+        }
+        
+        private void LoadNamespaces()
+        {
+            var config = KubernetesClientConfiguration.BuildConfigFromConfigFile();
+            config.Namespace = SelectedContext?.Namespace;
+            using var client = new Kubernetes(config);
+
+            List<string> data = GetNamespacesInternalAsync(client)
+                .GetAwaiter()
+                .GetResult();
+            
+            Namespaces.Clear();
+            foreach (var ns in data)
+            {
+                var record = new KubeNamespace(
+                    Name: ns,
+                    IsCurrent: ns == kubeConfig.Contexts
+                        .FirstOrDefault(c => c.Name == kubeConfig.CurrentContext)?
+                        .ContextDetails.Namespace);
+                Namespaces.Add(record);
+            }
+            
+            Status = $"Loaded {Namespaces.Count} namespaces(s) for: {kubeConfig.CurrentContext}";
+        }
+        
+        private static async Task<List<string>> GetNamespacesInternalAsync(IKubernetes client)
+        {
+            // ListNamespaceAsync calls the API endpoint: /api/v1/namespaces
+            V1NamespaceList namespaceList = await client.CoreV1.ListNamespaceAsync();
+
+            // Extract and return the namespace names
+            return namespaceList.Items
+                .Select(ns => ns.Metadata.Name)
+                .ToList();
         }
     }
 }
