@@ -134,13 +134,14 @@ namespace KubeCtrlUI.ViewModels
         private void LoadNamespaces()
         {
             var config = KubernetesClientConfiguration.BuildConfigFromConfigFile();
-            config.Namespace = SelectedContext?.Namespace;
+            // var config = KubernetesClientConfiguration.InClusterConfig();
+            // config.Namespace = SelectedContext?.Namespace;
             using var client = new Kubernetes(config);
 
             List<string> data = GetNamespacesInternalAsync(client)
                 .GetAwaiter()
                 .GetResult();
-            
+
             Namespaces.Clear();
             foreach (var ns in data)
             {
@@ -151,15 +152,15 @@ namespace KubeCtrlUI.ViewModels
                         .ContextDetails.Namespace);
                 Namespaces.Add(record);
             }
-            
+
             Status = $"Loaded {Namespaces.Count} namespaces(s) for: {kubeConfig.CurrentContext}";
         }
         
         private static async Task<List<string>> GetNamespacesInternalAsync(IKubernetes client)
         {
             // ListNamespaceAsync calls the API endpoint: /api/v1/namespaces
-            V1NamespaceList namespaceList = await client.CoreV1.ListNamespaceAsync();
-
+            // V1NamespaceList namespaceList = await client.CoreV1.ListNamespaceAsync().ConfigureAwait(false);;
+            V1NamespaceList namespaceList = client.CoreV1.ListNamespace();
             // Extract and return the namespace names
             return namespaceList.Items
                 .Select(ns => ns.Metadata.Name)
