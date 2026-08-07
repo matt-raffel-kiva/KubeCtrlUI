@@ -7,6 +7,13 @@ public record KubeContext(
     string Namespace,
     bool IsCurrent);
     
-public record KubeNamespace(    
+public record KubeNamespace(
     string Name,
     bool IsCurrent);
+
+public record KubePod(
+    string Name,
+    string Phase,
+    string Ready,
+    int RestartCount,
+    string Age);
